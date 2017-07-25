@@ -5,8 +5,8 @@
 # ------------------------------------------------------------------
 
 ### UNCOMMENT NEXT 2 LINES FOR DEBUGGING
-#set -x
-#trap read debug
+set -x
+trap read debug
 
 VERSION=0.1.0
 SUBJECT=some-unique-id
@@ -106,34 +106,42 @@ touch $LOCK_FILE
 
 # --- Body --------------------------------------------------------
 #  SCRIPT LOGIC GOES HERE
+
+#make working directory /var/log, exit if it cannot
+cd /var/log ||exit
+
+#Tell user what's going on
 echo "Processing the following log files: $@"
 echo "$#" ' file(s)'
 while [ "$1" ]
 	do
-	echo "---------"
+	 echo "---------"
 		if [ -f $1 ]
 		then
-			#check if frombot (t) was provided, if not set it to 3 for default behavior
-			if [ -z "$frombot" ]; then frombot=3; fi		
-			# display the bottom lines of file as specifed in frombot variable
-			echo "Bottom $frombot lines of $1:"
-			tail -$frombot $1
 			#check if fromtop (h) was provided
 			if [ -n "$fromtop" ]; then
 				#display lines from top of file as specified
 				echo "Top $fromtop lines for $1:"
 				head -$fromtop $1
-				fi
+					#if [ -z "$frombot" ]; then
+					#exit
 			#check if matchme (k) was provided
 			if [ -n "$matchme" ]; then
 				#grep file for anything matching matchme string
 				echo "displaying lines with $matchme:"
 				grep $matchme $1
-				fi
+					#if [ -z "$frombot" ]; then
+					#exit
+			#check if frombot (t) was provided, if not set it to 3 for default behavior
+                        if [ -z "$frombot" ]; then frombot=3
+                        # display the bottom lines of file as specifed in frombot variable
+			echo "Bottom $frombot lines of $1:"
+                        tail -$frombot $1
+
 		else
 			echo "$1 not found."
 		fi
-	shift
+	 shift
 	done
 # -----------------------------------------------------------------
 
