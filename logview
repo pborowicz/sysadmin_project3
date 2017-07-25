@@ -5,8 +5,8 @@
 # ------------------------------------------------------------------
 
 ### UNCOMMENT NEXT 2 LINES FOR DEBUGGING
-set -x
-trap read debug
+#set -x
+#trap read debug
 
 VERSION=0.1.0
 SUBJECT=some-unique-id
@@ -20,6 +20,8 @@ SUBJECT=some-unique-id
 #	logview <options> <logfile1> <logfile2> ...'
 
 ### ---- FUNCTIONS ###
+
+#This checknum function verifies that the variable is a number
 function checknum {
 test $1 -ge 0 &> /dev/null
 
@@ -44,46 +46,58 @@ END
 
 
 # --- Options processing -------------------------------------------
+
+# display help if --help is appended to the command
 if [ "$1" = "--help" ] 
 	then
 		echo "$USAGE"
 	exit 1;
 fi
 
+#display usage is command has nothing appended
 if [ $# == 0 ] ; then
     echo "$USAGE"
     exit 1;
 fi
 
+##process flags v, t, k, & h as specified below
+## require flags to have options and exclude any flags not specified
 while getopts ":v:t:k:h:" optname
   do
     case "$optname" in
+	#display version
       "v")
         echo "Version $VERSION"
         exit 0;
         ;;
+	# get -t, and put it in frombot
       "t")
 	#set t flag arguement to frombot variable
 	frombot=$OPTARG
 	checknum $frombot
 	;;
+	# get -k and put it in matchme
       "k")
 	#set k flag argument to matchme string
 	matchme=$OPTARG
 	;;	
+	# get -h and put it in fromtop
       "h")
 	#set h flag argument to fromtop variable
         fromtop=$OPTARG
 	checknum $fromtop
         ;;
+	# exclude any unspecified flags
       "?")
         echo "Unknown option $OPTARG"
         exit 0;
         ;;
+	# error if no arguments given with flags
       ":")
         echo "No argument value for option $OPTARG"
         exit 0;
         ;;
+	# exclude any longer uspecified flags
       *)
         echo "Unknown error while processing options"
         exit 0;
@@ -123,21 +137,31 @@ while [ "$1" ]
 				#display lines from top of file as specified
 				echo "Top $fromtop lines for $1:"
 				head -$fromtop $1
-					#if [ -z "$frombot" ]; then
-					#exit
+			fi
+
 			#check if matchme (k) was provided
 			if [ -n "$matchme" ]; then
 				#grep file for anything matching matchme string
 				echo "displaying lines with $matchme:"
 				grep $matchme $1
-					#if [ -z "$frombot" ]; then
-					#exit
-			#check if frombot (t) was provided, if not set it to 3 for default behavior
-                        if [ -z "$frombot" ]; then frombot=3
-                        # display the bottom lines of file as specifed in frombot variable
-			echo "Bottom $frombot lines of $1:"
-                        tail -$frombot $1
-
+			fi
+			#check if frombot (t) was provided, output specified number of lines form bottom
+                        if [ -n "$frombot" ]; then
+                       		# display the bottom lines of file as specifed in frombot variable
+				echo "Bottom $frombot lines of $1:"
+                        	tail -$frombot $1
+			else 
+				# check if other flags are present, skip default action if they are
+				# if no other flags are present and frombottom is unset
+				# perform these default actions
+				if [ -z "$matchme" ] && [ -z "$fromtop" ]
+				then
+				#set frombot to 3, the default
+				frombot=3
+				echo "Bottom $frombot lines of $1:"
+				tail -$frombot $1
+				fi
+			fi
 		else
 			echo "$1 not found."
 		fi
