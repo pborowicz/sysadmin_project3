@@ -1,0 +1,31 @@
+#/bin/bash
+
+##This is a code snippet that illustrating how to capture flags
+
+# capture flags -h, -t, & -k
+while getopts ":h:t:k:" opt; do
+  case $opt in
+# capture -h to $hlock variable
+    h) 
+      hlock=$OPTARG 
+      ;;
+#capture -t to $tlock variable
+    t)
+      tlock=$OPTARG 
+      ;;
+#capture -k to $klock variable
+    k)
+      klock=$OPTARG
+      ;;
+# indicate other flags are incorrect
+    \?)
+      echo "Invalid option: $OPTARG" >&2
+       ;;
+# indicate flags require an argument
+    :) echo "Option: -$OPTARG requires an argument." <&2
+       exit 1
+	;;
+  esac
+done
+
+ echo "$hlock, $tlock, $klock"

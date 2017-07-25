@@ -1,0 +1,139 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+# [Paul Borowicz] System Admin Project 3 for MOBI
+#          logfile viewer script
+# ------------------------------------------------------------------
+
+### UNCOMMENT NEXT 2 LINES FOR DEBUGGING
+#set -x
+#trap read debug
+
+VERSION=0.1.0
+SUBJECT=some-unique-id
+#USAGE='This script will display log files
+#	it accepts these flags:
+#	-h # number of lines to display from top
+#	-t # number of lines to display from bottom
+#	-k <string> display lines with matching string
+#	-v version
+#
+#	logview <options> <logfile1> <logfile2> ...'
+
+### ---- FUNCTIONS ###
+function checknum {
+test $1 -ge 0 &> /dev/null
+
+if [ $? -gt 1 ]; then
+    echo "This flag requires an integer, exiting."
+exit
+fi
+}
+#### -------- ###### ----------
+
+USAGE=$(cat <<-END
+	This script will display log files
+        it accepts these flags:
+        -h # number of lines to display from top
+        -t # number of lines to display from bottom
+        -k <srting> display lines with matching string
+        -v version
+
+        logview <options> <logfile1> <logfile2> ...
+END
+)
+
+
+# --- Options processing -------------------------------------------
+if [ "$1" = "--help" ] 
+	then
+		echo "$USAGE"
+	exit 1;
+fi
+
+if [ $# == 0 ] ; then
+    echo "$USAGE"
+    exit 1;
+fi
+
+while getopts ":v:t:k:h:" optname
+  do
+    case "$optname" in
+      "v")
+        echo "Version $VERSION"
+        exit 0;
+        ;;
+      "t")
+	#set t flag arguement to frombot variable
+	frombot=$OPTARG
+	checknum $frombot
+	;;
+      "k")
+	#set k flag argument to matchme string
+	matchme=$OPTARG
+	;;	
+      "h")
+	#set h flag argument to fromtop variable
+        fromtop=$OPTARG
+	checknum $fromtop
+        ;;
+      "?")
+        echo "Unknown option $OPTARG"
+        exit 0;
+        ;;
+      ":")
+        echo "No argument value for option $OPTARG"
+        exit 0;
+        ;;
+      *)
+        echo "Unknown error while processing options"
+        exit 0;
+        ;;
+    esac
+  done
+
+shift "$(($OPTIND - 1))"
+
+
+# --- Locks -------------------------------------------------------
+LOCK_FILE=/tmp/$SUBJECT.lock
+if [ -f "$LOCK_FILE" ]; then
+   echo "Script is already running"
+   exit
+fi
+
+trap "rm -f $LOCK_FILE" EXIT
+touch $LOCK_FILE
+
+# --- Body --------------------------------------------------------
+#  SCRIPT LOGIC GOES HERE
+echo "Processing the following log files: $@"
+echo "$#" ' file(s)'
+while [ "$1" ]
+	do
+	echo "---------"
+		if [ -f $1 ]
+		then
+			#check if frombot (t) was provided, if not set it to 3 for default behavior
+			if [ -z "$frombot" ]; then frombot=3; fi		
+			# display the bottom lines of file as specifed in frombot variable
+			echo "Bottom $frombot lines of $1:"
+			tail -$frombot $1
+			#check if fromtop (h) was provided
+			if [ -n "$fromtop" ]; then
+				#display lines from top of file as specified
+				echo "Top $fromtop lines for $1:"
+				head -$fromtop $1
+				fi
+			#check if matchme (k) was provided
+			if [ -n "$matchme" ]; then
+				#grep file for anything matching matchme string
+				echo "displaying lines with $matchme:"
+				grep $matchme $1
+				fi
+		else
+			echo "$1 not found."
+		fi
+	shift
+	done
+# -----------------------------------------------------------------
+
